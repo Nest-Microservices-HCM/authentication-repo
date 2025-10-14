@@ -26,5 +26,6 @@ async function main() {
 
   await app.listen();
   logger.log(`Authentication microservice running on port ${envs.port}`);
+  console.log('Authenticaction service');
 }
 main();
