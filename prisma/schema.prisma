@@ -10,23 +10,188 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
+  id        String   @id @default(uuid())
+  email     String   @unique
   password  String
   name      String
   avatar    String?
-  isActive  Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  userRole  UserRole[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userRoles UserRoleAssignment[]
+
+  PasswordReset PasswordReset[]
+
+  AuthLog AuthLog[]
+
+  UserPermission UserPermission[]
+
+  @@map("user")
 }
 
-enum UserRole {
-  ADMIN
-  USER
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("password_reset")
+}
+
+model AuthLog {
+  id        String     @id @default(uuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    AuthAction
+  ipAddress String?
+  success   Boolean
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("auth_log")
+}
+
+enum AuthAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PASSWORD_RESET_REQUEST
+  PASSWORD_RESET_COMPLETE
+}
+
+model Module {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  submodules  SubModule[]
+  permissions Permission[]
+
+  @@map("module")
+}
+
+model SubModule {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  moduleId    String
+  module      Module       @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  permissions Permission[]
+
+  @@unique([moduleId, name])
+  @@map("submodule")
+}
+
+model Action {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  code        String   @unique // Ej: READ, WRITE, DELETE, etc.
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  permissions Permission[]
+
+  @@map("action")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String?
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relaciones con módulo, submódulo y acción
+  moduleId String
+  module   Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  subModuleId String?
+  subModule   SubModule? @relation(fields: [subModuleId], references: [id], onDelete: Cascade)
+
+  actionId String
+  action   Action @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  // Relación con usuarios
+  userPermissions UserPermission[]
+
+  // Relación con roles
+  rolePermissions RolePermission[]
+
+  @@unique([moduleId, subModuleId, actionId])
+  @@map("permission")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relaciones
+  userAssignments UserRoleAssignment[]
+  rolePermissions RolePermission[]
+
+  @@map("role")
+}
+
+model UserRoleAssignment {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_role_assignment") // Cambiado el nombre del mapa para mayor claridad
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permission")
+}
+
+model UserPermission {
+  id           String  @id @default(uuid())
+  userId       String
+  permissionId String
+  granted      Boolean @default(true)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permission")
 }

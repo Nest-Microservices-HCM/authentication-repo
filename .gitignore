@@ -5,6 +5,7 @@
 
 #DB
 postgres/
+mysql/
 
 # Logs
 logs

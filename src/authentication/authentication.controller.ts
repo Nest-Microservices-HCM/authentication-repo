@@ -1,8 +1,10 @@
-import { Controller, ParseUUIDPipe } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthenticationService } from './authentication.service';
 import { CreateAuthenticationDto } from './dto/create-authentication.dto';
 import { LoginAuthenticationDto } from './dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller()
 export class AuthenticationController {
@@ -20,13 +22,32 @@ export class AuthenticationController {
     return this.authenticationService.registerUser(createAuthenticationDto);
   }
 
-  @MessagePattern('verifyAuthentication')
-  verify(@Payload('id') id: string) {
-    return this.authenticationService.verifyUser(id);
+  @MessagePattern('verifyAuthenticationToken')
+  verify(@Payload() token: string) {
+    return this.authenticationService.verifyToken(token);
   }
 
   @MessagePattern('findUserById')
   findOne(@Payload('id') id: string) {
     return this.authenticationService.findOne(id);
+  }
+
+  @MessagePattern('requestPasswordReset')
+  requestPasswordReset(
+    @Payload() requestPasswordResetDto: RequestPasswordResetDto,
+  ) {
+    return this.authenticationService.requestPasswordReset(
+      requestPasswordResetDto,
+    );
+  }
+
+  @MessagePattern('resetPassword')
+  resetPassword(@Payload() resetPasswordDto: ResetPasswordDto) {
+    return this.authenticationService.resetPassword(resetPasswordDto);
+  }
+
+  @MessagePattern('validateResetToken')
+  validateResetToken(@Payload() token: string) {
+    return this.authenticationService.validateResetToken(token);
   }
 }

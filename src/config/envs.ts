@@ -6,12 +6,14 @@ interface EnvVars {
   DATABASE_URL: string;
 
   NATS_SERVERS: string[];
+  JWT_SECRET: string;
 }
 
 const envsSchema = Joi.object<EnvVars>({
   PORT: Joi.number().required(),
   DATABASE_URL: Joi.string().required(),
   NATS_SERVERS: Joi.array().items(Joi.string().uri()).required(),
+  JWT_SECRET: Joi.string().required(),
 }).unknown(true);
 
 const { error, value } = envsSchema.validate({
@@ -29,4 +31,5 @@ export const envs = {
   port: envVars.PORT,
   databaseUrl: envVars.DATABASE_URL,
   natsServers: envVars.NATS_SERVERS,
+  jwtSecret: envVars.JWT_SECRET,
 };

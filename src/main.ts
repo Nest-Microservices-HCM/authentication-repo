@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { envs } from './config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { TimezoneInterceptor } from './common/interceptors/timezone.interceptor';
 
 async function main() {
   const logger = new Logger('authentication-ms');
@@ -24,8 +25,9 @@ async function main() {
     }),
   );
 
+  app.useGlobalInterceptors(new TimezoneInterceptor());
+
   await app.listen();
   logger.log(`Authentication microservice running on port ${envs.port}`);
-  console.log('Authenticaction service');
 }
 main();
