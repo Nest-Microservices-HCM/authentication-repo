@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   HttpStatus,
   Injectable,
   Logger,
